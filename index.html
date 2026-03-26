@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#9B8EC7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="마음이" />
+  <title>마음이</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #F2EAE0; --blue: #B4D3D9; --purple: #BDA6CE; --dark: #9B8EC7;
+      --text: #3a2e2e; --sub: #7a6a6a; --muted: #a89a9a;
+      --card: rgba(255,255,255,0.72); --r: 18px; --rs: 12px;
+    }
+    html, body { height: 100%; background: var(--bg); font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; color: var(--text); overflow: hidden; }
+    #app { max-width: 480px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; }
+
+    .nav { display: flex; justify-content: space-around; align-items: center; height: 64px; padding-bottom: env(safe-area-inset-bottom, 4px); background: rgba(242,234,224,0.97); border-top: 1px solid rgba(180,211,217,0.35); flex-shrink: 0; order: 2; }
+    .nb { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 6px 16px; border-radius: 12px; transition: background 0.15s; }
+    .nb:active { background: rgba(189,166,206,0.2); }
+    .nb.active .ni { color: var(--dark); }
+    .nb.active .nl { color: var(--dark); font-weight: 700; }
+    .ni { font-size: 21px; line-height: 1; }
+    .nl { font-size: 10px; color: var(--muted); }
+
+    .screens { flex: 1; order: 1; overflow: hidden; position: relative; }
+    .screen { display: none; position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 32px; }
+    .screen.active { display: block; animation: fu 0.22s ease; }
+    @keyframes fu { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+
+    /* HOME */
+    .home-top { padding: calc(env(safe-area-inset-top,10px) + 22px) 0 18px; text-align: center; }
+    .home-title { font-size: 27px; font-weight: 700; letter-spacing: -0.5px; }
+    .home-sub { font-size: 14px; color: var(--sub); margin-top: 5px; }
+    .slabel { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 10px; }
+    .mood-card { background: var(--card); border-radius: var(--r); padding: 16px; margin-bottom: 14px; border: 1px solid rgba(189,166,206,0.28); }
+    .mood-row { display: flex; gap: 6px; }
+    .mc { flex: 1; padding: 10px 2px; border-radius: 50px; border: 1.5px solid transparent; background: rgba(180,211,217,0.18); text-align: center; font-size: 19px; cursor: pointer; transition: all 0.15s; }
+    .mc span { display: block; font-size: 9px; color: var(--muted); margin-top: 2px; }
+    .mc.sel, .mc:active { background: rgba(189,166,206,0.28); border-color: var(--purple); transform: scale(1.06); }
+    .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .qcard { background: var(--card); border-radius: var(--r); padding: 15px 13px; cursor: pointer; border: 1px solid rgba(180,211,217,0.28); transition: all 0.15s; }
+    .qcard:active { transform: scale(0.97); }
+    .qicon { font-size: 23px; margin-bottom: 7px; }
+    .qtitle { font-size: 14px; font-weight: 700; }
+    .qdesc { font-size: 11px; color: var(--sub); margin-top: 3px; line-height: 1.45; }
+    .verse-home { background: var(--card); border-radius: var(--r); padding: 18px; border: 1px solid rgba(155,142,199,0.38); margin-bottom: 14px; display: none; }
+    .verse-home.show { display: block; }
+    .verse-label { font-size: 10px; font-weight: 700; color: var(--dark); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 10px; }
+    .verse-text { font-size: 15px; color: var(--text); line-height: 1.8; font-style: italic; font-weight: 500; }
+    .verse-ref { font-size: 13px; color: var(--dark); font-weight: 700; margin-top: 7px; }
+    .verse-msg { font-size: 13px; color: var(--sub); margin-top: 7px; line-height: 1.55; padding-top: 8px; border-top: 1px solid rgba(189,166,206,0.25); }
+    .ci-card { background: linear-gradient(135deg, rgba(180,211,217,0.38), rgba(189,166,206,0.32)); border-radius: var(--r); padding: 16px; border: 1px solid rgba(189,166,206,0.38); margin-bottom: 8px; }
+    .badge { display: inline-block; background: var(--dark); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 50px; margin-bottom: 8px; }
+    .ci-text { font-size: 13px; line-height: 1.65; }
+    .pbtn { display: inline-block; margin-top: 10px; background: var(--dark); color: #fff; border: none; padding: 9px 20px; border-radius: 50px; font-size: 13px; cursor: pointer; font-weight: 600; transition: opacity 0.15s; font-family: inherit; }
+    .pbtn:active { opacity: 0.8; }
+
+    /* CHAT */
+    #s-chat { display: none; flex-direction: column; padding: 0; }
+    #s-chat.active { display: flex; }
+    .chat-top { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top,8px) + 14px) 16px 13px; background: rgba(242,234,224,0.97); border-bottom: 1px solid rgba(189,166,206,0.22); flex-shrink: 0; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .cname { font-size: 16px; font-weight: 700; }
+    .cstatus { font-size: 12px; color: var(--dark); }
+    .msgs { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chips-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 10px; flex-shrink: 0; }
+    .chip { padding: 6px 13px; border-radius: 50px; background: rgba(180,211,217,0.22); border: 1px solid rgba(180,211,217,0.5); font-size: 12px; color: var(--sub); cursor: pointer; white-space: nowrap; }
+    .chip:active { background: rgba(189,166,206,0.28); color: var(--dark); }
+    .wai { display: flex; flex-direction: column; align-items: flex-start; }
+    .wuser { display: flex; flex-direction: column; align-items: flex-end; }
+    .msg { max-width: 83%; padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.65; }
+    .mai { background: rgba(189,166,206,0.22); border: 1px solid rgba(189,166,206,0.35); color: var(--text); border-bottom-left-radius: 4px; }
+    .muser { background: var(--dark); color: #fff; border-bottom-right-radius: 4px; }
+    .mtime { font-size: 10px; color: var(--muted); margin-top: 3px; padding: 0 4px; }
+    .typing { display: flex; align-items: center; gap: 5px; padding: 12px 15px; background: rgba(189,166,206,0.2); border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dark); animation: bl 1.2s infinite; }
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes bl{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+    .input-row { display: flex; gap: 8px; align-items: flex-end; padding: 10px 16px calc(env(safe-area-inset-bottom,8px) + 10px); background: rgba(242,234,224,0.97); border-top: 1px solid rgba(189,166,206,0.2); flex-shrink: 0; }
+    .ctxt { flex: 1; padding: 11px 14px; border-radius: 22px; border: 1.5px solid rgba(189,166,206,0.4); background: rgba(255,255,255,0.82); font-size: 14px; font-family: inherit; resize: none; outline: none; color: var(--text); max-height: 110px; transition: border-color 0.15s; }
+    .ctxt:focus { border-color: var(--purple); }
+    .sbtn { width: 42px; height: 42px; border-radius: 50%; background: var(--dark); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; font-size: 16px; transition: opacity 0.15s; }
+    .sbtn:active { opacity: 0.8; }
+    .sbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .verse-card { background: linear-gradient(145deg, rgba(180,211,217,0.22), rgba(189,166,206,0.3)); border: 1.5px solid rgba(155,142,199,0.45); border-radius: var(--r); padding: 18px; }
+    .verse-card-label { font-size: 10px; font-weight: 700; color: var(--dark); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 10px; }
+    .verse-card-text { font-size: 15px; color: var(--text); line-height: 1.8; font-style: italic; font-weight: 500; }
+    .verse-card-ref { font-size: 13px; color: var(--dark); font-weight: 700; margin-top: 8px; }
+    .verse-card-msg { font-size: 13px; color: var(--sub); margin-top: 7px; line-height: 1.55; border-top: 1px solid rgba(189,166,206,0.28); padding-top: 8px; }
+    .verse-save-btn { margin-top: 10px; background: var(--dark); color: #fff; border: none; padding: 8px 18px; border-radius: 50px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .verse-save-btn:active { opacity: 0.8; }
+
+    /* TRASH */
+    .page-top { padding: calc(env(safe-area-inset-top,10px) + 20px) 0 14px; text-align: center; }
+    .page-title { font-size: 22px; font-weight: 700; }
+    .page-sub { font-size: 13px; color: var(--sub); margin-top: 5px; line-height: 1.5; }
+    .info-box { background: rgba(155,142,199,0.1); border: 1px solid rgba(155,142,199,0.3); border-radius: var(--rs); padding: 12px 15px; margin-bottom: 14px; font-size: 13px; color: var(--sub); line-height: 1.5; }
+    .add-row { display: flex; gap: 8px; margin-bottom: 13px; }
+    .add-input { flex: 1; padding: 10px 14px; border-radius: 50px; border: 1.5px solid rgba(155,142,199,0.3); background: rgba(255,255,255,0.7); font-size: 13px; font-family: inherit; outline: none; color: var(--text); }
+    .add-input:focus { border-color: var(--dark); }
+    .add-btn { padding: 10px 14px; background: rgba(155,142,199,0.18); border: 1.5px solid rgba(155,142,199,0.4); border-radius: 50px; font-size: 13px; color: var(--dark); cursor: pointer; white-space: nowrap; font-family: inherit; }
+    .add-btn:active { background: rgba(155,142,199,0.32); }
+    .abtn { width: 100%; padding: 12px; background: rgba(155,142,199,0.18); border: 1.5px solid rgba(155,142,199,0.4); border-radius: 50px; font-size: 13px; color: var(--dark); font-family: inherit; cursor: pointer; margin-bottom: 13px; font-weight: 600; }
+    .abtn:active { background: rgba(155,142,199,0.3); }
+    .abtn:disabled { opacity: 0.42; cursor: not-allowed; }
+    .titems { display: flex; flex-direction: column; gap: 10px; }
+    .titem { background: var(--card); border-radius: var(--rs); padding: 13px 15px; border: 1.5px solid rgba(155,142,199,0.22); display: flex; align-items: flex-start; gap: 12px; }
+    .titem.ais { border-color: rgba(155,142,199,0.45); background: rgba(155,142,199,0.07); }
+    .tchk { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid rgba(155,142,199,0.5); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 13px; color: #fff; transition: all 0.15s; margin-top: 1px; }
+    .tchk.on { background: var(--dark); border-color: var(--dark); }
+    .tbody { flex: 1; }
+    .ttag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px; margin-bottom: 5px; }
+    .tag-ai { background: rgba(155,142,199,0.2); color: var(--dark); }
+    .tag-me { background: rgba(180,211,217,0.3); color: #4a8a94; }
+    .ttext { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .treason { font-size: 12px; color: var(--sub); margin-top: 3px; line-height: 1.4; font-style: italic; }
+    .del-btn { width: 100%; margin-top: 18px; padding: 14px; background: var(--dark); color: #fff; border: none; border-radius: 50px; font-size: 15px; font-family: inherit; cursor: pointer; font-weight: 600; }
+    .del-btn:active { opacity: 0.8; }
+
+    /* REVIEW */
+    .growth-card { background: linear-gradient(135deg, rgba(180,211,217,0.3), rgba(189,166,206,0.25)); border-radius: var(--r); padding: 16px; margin-bottom: 14px; border: 1px solid rgba(189,166,206,0.3); }
+    .glabel { font-size: 10px; font-weight: 700; color: var(--dark); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 6px; }
+    .gtext { font-size: 13px; line-height: 1.65; }
+    .tline { display: flex; flex-direction: column; gap: 12px; }
+    .tl-item { background: var(--card); border-radius: var(--r); padding: 15px; border: 1px solid rgba(180,211,217,0.28); border-left: 3px solid var(--blue); }
+    .tl-date { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tl-emotion { font-size: 14px; font-weight: 700; margin: 4px 0; }
+    .tl-summary { font-size: 13px; color: var(--sub); line-height: 1.5; }
+    .tl-verse { font-size: 12px; color: var(--dark); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(189,166,206,0.25); line-height: 1.6; }
+    .tl-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(189,166,206,0.2); }
+    .tl-q { font-size: 12px; color: var(--dark); font-style: italic; }
+    .ci-btn { font-size: 12px; background: rgba(189,166,206,0.2); border: 1px solid rgba(189,166,206,0.4); color: var(--dark); border-radius: 50px; padding: 4px 11px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .ci-btn:active { background: var(--purple); color: #fff; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav class="nav">
+    <button class="nb active" onclick="go('home',this)"><span class="ni">🌿</span><span class="nl">홈</span></button>
+    <button class="nb" onclick="go('chat',this)"><span class="ni">💬</span><span class="nl">상담</span></button>
+    <button class="nb" onclick="go('trash',this)"><span class="ni">🗑️</span><span class="nl">쓰레기통</span></button>
+    <button class="nb" onclick="go('review',this)"><span class="ni">📖</span><span class="nl">돌아보기</span></button>
+  </nav>
+
+  <div class="screens">
+    <!-- HOME -->
+    <div id="s-home" class="screen active">
+      <div class="home-top">
+        <div class="home-title">안녕하세요 🌸</div>
+        <div class="home-sub">오늘 마음은 어떠세요?</div>
+      </div>
+      <div class="mood-card">
+        <div class="slabel">지금 이 감정이 가장 가깝네요</div>
+        <div class="mood-row">
+          <div class="mc" onclick="pickMood(this,'우울해요')">😔<span>우울해요</span></div>
+          <div class="mc" onclick="pickMood(this,'불안해요')">😰<span>불안해요</span></div>
+          <div class="mc" onclick="pickMood(this,'화나요')">😤<span>화나요</span></div>
+          <div class="mc" onclick="pickMood(this,'그냥요')">😐<span>그냥요</span></div>
+          <div class="mc" onclick="pickMood(this,'괜찮아요')">🙂<span>괜찮아요</span></div>
+        </div>
+      </div>
+      <div class="qgrid">
+        <div class="qcard" onclick="go('chat',document.querySelectorAll('.nb')[1])">
+          <div class="qicon">💜</div>
+          <div class="qtitle">오늘 상담하기</div>
+          <div class="qdesc">마음속 이야기를 편하게 꺼내봐요</div>
+        </div>
+        <div class="qcard" onclick="go('trash',document.querySelectorAll('.nb')[2])">
+          <div class="qicon">🗑️</div>
+          <div class="qtitle">감정 버리기</div>
+          <div class="qdesc">버려도 될 감정을 정리해요</div>
+        </div>
+      </div>
+      <div class="verse-home" id="verse-home">
+        <div class="verse-label">✝️ 오늘의 말씀</div>
+        <div class="verse-text" id="vh-text"></div>
+        <div class="verse-ref" id="vh-ref"></div>
+        <div class="verse-msg" id="vh-msg"></div>
+      </div>
+      <div class="ci-card">
+        <div class="badge">💌 체크인 알림</div>
+        <div class="ci-text">지난번에 나눴던 이야기, 요즘은 어떠세요?</div>
+        <button class="pbtn" onclick="startCheckin('지난번에 이야기했던 감정에 대해 요즘은 어떤지 체크인하고 싶어요')">지금 이야기하기 →</button>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="s-chat" class="screen">
+      <div class="chat-top">
+        <div class="avatar">🌿</div>
+        <div>
+          <div class="cname">마음이</div>
+          <div class="cstatus">● 지금 함께 있어요</div>
+        </div>
+      </div>
+      <div class="chips-row">
+        <div class="chip" onclick="fill('요즘 너무 지쳐요')">요즘 너무 지쳐요</div>
+        <div class="chip" onclick="fill('불안한 마음이 들어요')">불안해요</div>
+        <div class="chip" onclick="fill('자꾸 부정적인 생각이 나요')">부정적인 생각이 나요</div>
+        <div class="chip" onclick="fill('나 자신이 너무 싫어요')">나 자신이 싫어요</div>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="wai">
+          <div class="msg mai">안녕하세요 😊 오늘 어떤 마음을 가져오셨나요? 편하게 이야기해주세요, 여기서는 뭐든 괜찮아요.</div>
+          <div class="mtime">지금</div>
+        </div>
+      </div>
+      <div class="input-row">
+        <textarea class="ctxt" id="ctxt" rows="1" placeholder="오늘 어떤 마음인지 적어보세요..."></textarea>
+        <button class="sbtn" id="sbtn" onclick="send()">➤</button>
+      </div>
+    </div>
+
+    <!-- TRASH -->
+    <div id="s-trash" class="screen">
+      <div class="page-top">
+        <div class="page-title">감정 쓰레기통 🗑️</div>
+        <div class="page-sub">나에게 더 이상 도움이 되지 않는<br>감정과 생각들을 버려요.</div>
+      </div>
+      <div class="info-box">💜 상담 후 마음이가 버릴 것들을 추천해드려요. 직접 추가도 가능해요.</div>
+      <button class="abtn" id="abtn" onclick="analyze()">🤖 상담 내용에서 버릴 것 찾아주기</button>
+      <div class="add-row">
+        <input class="add-input" id="tinput" placeholder="버리고 싶은 생각을 직접 추가해요..." />
+        <button class="add-btn" onclick="addItem()">+ 추가</button>
+      </div>
+      <div class="titems" id="titems">
+        <div class="empty-state">아직 버릴 항목이 없어요.<br>상담을 먼저 나눠보거나 직접 추가해봐요 🌿</div>
+      </div>
+      <button class="del-btn" onclick="emptyTrash()">선택한 것들 비우기 🗑️</button>
+    </div>
+
+    <!-- REVIEW -->
+    <div id="s-review" class="screen">
+      <div class="page-top">
+        <div class="page-title">돌아보기 📖</div>
+        <div class="page-sub" style="color:var(--sub);">지나온 마음의 기록들이에요</div>
+      </div>
+      <div class="growth-card">
+        <div class="glabel">🌱 성장 메모</div>
+        <div class="gtext" id="growth">아직 상담 기록이 없어요. 오늘 첫 대화를 나눠보세요 🌸</div>
+      </div>
+      <div class="tline" id="tline">
+        <div class="empty-state">상담 후 여기에 기록이 쌓여요.<br>마음이와 이야기 나눠봐요 💬</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYS = `당신은 '마음이'라는 따뜻한 심리 상담사예요. 다음 원칙을 따라주세요.
+
+말투: 항상 ~해요 체. 따뜻하고 진심 어린 동감. 이모지 1-2개만. 너무 과한 공감보다 진심 어린 반응.
+
+심리 기반: CBT(인지행동치료), ACT(수용전념치료), 애착이론, 자기연민 이론을 자연스럽게 녹여서.
+
+대화 흐름:
+1. 감정을 충분히 들어주고 동감
+2. 그 감정의 배경이나 패턴을 부드럽게 탐색
+3. 생각의 전환이 필요하면 새로운 시각 제안
+4. 마지막엔 아주 작고 구체적인 행동 하나 제안
+
+응답 길이: 3-5문장. 한 번에 너무 많은 조언은 하지 말아요.`;
+
+const VERSE_SYS = `당신은 기독교 심리 상담사예요. 사용자의 대화를 바탕으로 가장 위로가 되는 성경 말씀(개역개정)을 딱 하나 골라주세요.
+
+반드시 아래 JSON 형식으로만 응답하세요. 백틱이나 마크다운 없이 순수 JSON만:
+{"verse":"말씀 전문 (개역개정 그대로)","ref":"책 장:절 (예: 이사야 41:10)","message":"이 말씀이 오늘 당신에게 건네는 위로 2-3문장. ~해요 체, 따뜻하게. 다음 대화까지 이 말씀을 붙들고 버텨봐요 라는 마무리 포함."}
+
+구약 신약 모두 가능. 대화의 감정과 상황에 딱 맞는 말씀으로 골라주세요.`;
+
+let hist = [], busy = false;
+
+function now(){ return new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}); }
+
+function go(name, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+function pickMood(el, mood){
+  document.querySelectorAll('.mc').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  setTimeout(()=>{ fill(mood+' 느낌이에요'); go('chat',document.querySelectorAll('.nb')[1]); }, 280);
+}
+
+function fill(t){ document.getElementById('ctxt').value=t; document.getElementById('ctxt').focus(); }
+
+function addMsg(text, role){
+  const wrap=document.createElement('div');
+  wrap.className=role==='user'?'wuser':'wai';
+  const m=document.createElement('div');
+  m.className=role==='user'?'msg muser':'msg mai';
+  m.textContent=text;
+  const t=document.createElement('div');
+  t.className='mtime'; t.textContent=now();
+  wrap.appendChild(m); wrap.appendChild(t);
+  document.getElementById('msgs').appendChild(wrap);
+  document.getElementById('msgs').scrollTop=99999;
+}
+
+function showTyping(){
+  const el=document.createElement('div');
+  el.id='typ'; el.className='wai';
+  el.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  document.getElementById('msgs').appendChild(el);
+  document.getElementById('msgs').scrollTop=99999;
+}
+function hideTyping(){ const e=document.getElementById('typ'); if(e)e.remove(); }
+
+async function send(){
+  const txt=document.getElementById('ctxt').value.trim();
+  if(!txt||busy) return;
+  busy=true;
+  document.getElementById('sbtn').disabled=true;
+  document.getElementById('ctxt').value='';
+  addMsg(txt,'user');
+  hist.push({role:'user',content:txt});
+  showTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS,messages:hist})
+    });
+    const d=await res.json();
+    const reply=d.content?.[0]?.text||'잠깐 연결이 어려워요. 다시 말해주세요 😊';
+    hideTyping();
+    addMsg(reply,'ai');
+    hist.push({role:'assistant',content:reply});
+    saveReview(txt,reply);
+    // 대화 6턴마다 말씀 제안
+    if(hist.length>=6 && hist.length%6===0) setTimeout(fetchVerse,900);
+  }catch(e){
+    hideTyping();
+    addMsg('잠깐 연결이 어려워요. 다시 한번 말해주세요 😊','ai');
+  }
+  busy=false;
+  document.getElementById('sbtn').disabled=false;
+}
+
+async function fetchVerse(){
+  const conv=hist.map(m=>`${m.role==='user'?'사용자':'마음이'}: ${m.content}`).join('\n');
+  showTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:VERSE_SYS,
+        messages:[{role:'user',content:`다음 대화를 기반으로 말씀을 골라주세요:\n${conv}`}]
+      })
+    });
+    const d=await res.json();
+    hideTyping();
+    const raw=d.content?.[0]?.text?.replace(/```json|```/g,'').trim();
+    const v=JSON.parse(raw);
+    insertVerseCard(v);
+    saveVerse(v);
+  }catch(e){ hideTyping(); }
+}
+
+function insertVerseCard(v){
+  const msgs=document.getElementById('msgs');
+  const wrap=document.createElement('div');
+  wrap.className='wai'; wrap.style.width='100%';
+  wrap.innerHTML=`<div class="verse-card">
+    <div class="verse-card-label">✝️ 오늘의 말씀</div>
+    <div class="verse-card-text">"${v.verse}"</div>
+    <div class="verse-card-ref">${v.ref}</div>
+    <div class="verse-card-msg">${v.message}</div>
+    <button class="verse-save-btn" onclick="saveAndGoHome()">홈에 저장하기 🌸</button>
+  </div>`;
+  msgs.appendChild(wrap);
+  msgs.scrollTop=99999;
+}
+
+function saveVerse(v){
+  try{ localStorage.setItem('maeum_verse',JSON.stringify(v)); }catch(e){}
+  renderVerseHome(v);
+}
+
+function renderVerseHome(v){
+  if(!v) return;
+  document.getElementById('vh-text').textContent=`"${v.verse}"`;
+  document.getElementById('vh-ref').textContent=v.ref;
+  document.getElementById('vh-msg').textContent=v.message;
+  document.getElementById('verse-home').classList.add('show');
+}
+
+function saveAndGoHome(){
+  go('home',document.querySelectorAll('.nb')[0]);
+}
+
+document.getElementById('ctxt').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
+});
+
+// TRASH
+async function analyze(){
+  if(hist.length<2){alert('먼저 상담 대화를 나눠봐요 💜');return;}
+  const btn=document.getElementById('abtn');
+  btn.disabled=true; btn.textContent='분석 중이에요...';
+  const conv=hist.map(m=>`${m.role==='user'?'사용자':'마음이'}: ${m.content}`).join('\n');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,
+        system:`심리 전문가로서 대화를 분석해 버려야 할 비합리적 신념과 인지왜곡을 찾아주세요.
+순수 JSON만 응답 (백틱 없이):
+{"items":[{"thought":"버려야 할 생각 (15자 이내)","reason":"왜 버려야 하는지 (30자 이내, 심리학 근거)"}]}
+최대 3개.`,
+        messages:[{role:'user',content:`분석해주세요:\n${conv}`}]
+      })
+    });
+    const d=await res.json();
+    const p=JSON.parse(d.content[0].text.replace(/```json|```/g,'').trim());
+    const box=document.getElementById('titems');
+    const empty=box.querySelector('.empty-state');
+    if(empty) empty.remove();
+    p.items.forEach(item=>{
+      const div=document.createElement('div');
+      div.className='titem ais';
+      div.innerHTML=`<div class="tchk" onclick="chk(this)"></div>
+        <div class="tbody">
+          <span class="ttag tag-ai">🤖 마음이 추천</span>
+          <div class="ttext">${item.thought}</div>
+          <div class="treason">${item.reason}</div>
+        </div>`;
+      box.appendChild(div);
+    });
+  }catch(e){ alert('분석 중 문제가 생겼어요. 잠깐 후 다시 시도해주세요 😊'); }
+  btn.disabled=false; btn.textContent='🤖 상담 내용에서 버릴 것 찾아주기';
+}
+
+function chk(el){
+  el.classList.toggle('on');
+  el.textContent=el.classList.contains('on')?'✓':'';
+}
+
+function addItem(){
+  const inp=document.getElementById('tinput');
+  const t=inp.value.trim(); if(!t) return;
+  const box=document.getElementById('titems');
+  const empty=box.querySelector('.empty-state'); if(empty) empty.remove();
+  const div=document.createElement('div');
+  div.className='titem';
+  div.innerHTML=`<div class="tchk" onclick="chk(this)"></div>
+    <div class="tbody">
+      <span class="ttag tag-me">✏️ 내가 추가</span>
+      <div class="ttext">${t}</div>
+    </div>`;
+  box.appendChild(div); inp.value='';
+}
+
+function emptyTrash(){
+  const checked=document.querySelectorAll('.tchk.on');
+  if(!checked.length){alert('버릴 항목을 먼저 체크해주세요 💜');return;}
+  const n=checked.length;
+  checked.forEach(c=>c.closest('.titem').remove());
+  const box=document.getElementById('titems');
+  if(!box.querySelector('.titem')) box.innerHTML='<div class="empty-state">모두 잘 버렸어요 🌸<br>마음이 조금 가벼워졌으면 해요.</div>';
+  alert(`${n}개를 버렸어요. 잘 하셨어요 🌸`);
+}
+
+// REVIEW
+function saveReview(userMsg, aiReply){
+  if(hist.length<4) return;
+  let list=[];
+  try{ list=JSON.parse(localStorage.getItem('maeum_reviews')||'[]'); }catch(e){}
+  if(!list.length||Date.now()-list[list.length-1].ts>3600000){
+    list.push({ts:Date.now(),userMsg,aiReply});
+    try{ localStorage.setItem('maeum_reviews',JSON.stringify(list.slice(-10))); }catch(e){}
+    renderReview();
+  }
+}
+
+function renderReview(){
+  let list=[];
+  try{ list=JSON.parse(localStorage.getItem('maeum_reviews')||'[]'); }catch(e){}
+  const tl=document.getElementById('tline');
+  if(!list.length) return;
+  document.getElementById('growth').textContent=`총 ${list.length}번의 대화를 나눴어요. 마음을 꺼낼 수 있다는 것 자체가 이미 용기 있는 일이에요 🌸`;
+  tl.innerHTML='';
+  let verse=null;
+  try{ verse=JSON.parse(localStorage.getItem('maeum_verse')||'null'); }catch(e){}
+  list.slice().reverse().forEach((s,i)=>{
+    const d=new Date(s.ts);
+    const ds=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+    const div=document.createElement('div');
+    div.className='tl-item';
+    const vHtml=(i===0&&verse)?`<div class="tl-verse">✝️ "${verse.verse}" — ${verse.ref}</div>`:'';
+    div.innerHTML=`
+      <div class="tl-date">${ds}</div>
+      <div class="tl-emotion">💬 "${s.userMsg.slice(0,22)}${s.userMsg.length>22?'...':''}"</div>
+      <div class="tl-summary">${s.aiReply.slice(0,90)}...</div>
+      ${vHtml}
+      <div class="tl-foot">
+        <div class="tl-q">요즘은 어떠세요?</div>
+        <button class="ci-btn" onclick="startCheckin('${s.userMsg.replace(/'/g,'').slice(0,20)}')">체크인 →</button>
+      </div>`;
+    tl.appendChild(div);
+  });
+}
+
+function startCheckin(topic){
+  go('chat',document.querySelectorAll('.nb')[1]);
+  setTimeout(()=>fill(`${topic}에 대해 요즘은 어떤지 이야기하고 싶어요`),200);
+}
+
+// 초기화
+(function init(){
+  let v=null;
+  try{ v=JSON.parse(localStorage.getItem('maeum_verse')||'null'); }catch(e){}
+  if(v) renderVerseHome(v);
+  renderReview();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
